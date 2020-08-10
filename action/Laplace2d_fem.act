@@ -1,0 +1,86 @@
+action input:show_mesh(vertex_id="false|true",element_id="false|true",region_show="false|true") : \begin
+from numpy import *
+r=$input.vertex[]
+for i in r:
+	point(i[1]+[0],3)
+	if vertex_id=="true":
+		text(i[1]+[0],"%d"%i[0],[0,0,1,1,18])
+ele=$input.element[]
+for i in ele:
+	r=[]
+	n=len(i[1])
+	c=array([0.,0.,0.])
+	for j in range(n):
+		a=array(get(getLocation("Vertex",i[1][j])+".position")+[0])
+		c+=a
+		r.append(a)
+	polyline(array(r).tolist()+[r[0].tolist()],3)
+	c=c/n
+	if element_id=="true":
+		text(c.tolist(),"%d"%i[0],[0,0,1,1,18])
+if region_show=="true":
+	re=$input.region[]
+	for i in re:
+		if i[2]=="phi":
+			c=1
+			a=[0.1]
+		else:
+			c=2
+			a=[-0.1]
+		for j in i[1]:
+			r=get(getLocation("Vertex",j)+".position")+a
+			point(r,c)
+\end
+
+action output:show_mesh() : \begin
+v=$input.vertex[]
+for i in range(len(v)):
+	v[i][1]=v[i][1]+[0]
+e=$input.element[].vertex[]
+mesh=meshfield("2d",v,e)
+id=$input.vertex[].id
+phi=$output.vertex[].phi
+mesh.field(id,phi)
+mesh.ccolor([1,0,0,1.0,0,0,1,1.0])
+mesh.draw()
+\end
+
+action output:out_vtk(fileName="laplace2d_fem.vtk") : \begin
+fvtk=open(udfDirectory()+"/"+fileName,'w')
+fvtk.write("# vtk DataFile Version 2.0\n")
+fvtk.write("FEM of 2 laplace equation\n")
+fvtk.write("ASCII\n\n")
+v=$input.vertex[].position
+fvtk.write("DATASET UNSTRUCTURED_GRID\n")
+fvtk.write("POINTS %d float\n"%(len(v)))
+for i in range(len(v)):
+	fvtk.write("{} {} {}\n".format(v[i][0],v[i][1],0.0))
+fvtk.write("\n")
+e=$input.element[].vertex[]
+n=len(e)
+s=0
+for i in e:
+	s+=len(i)+1
+fvtk.write("CELLS %d %d\n"%(n,s))
+for i in e:
+	fvtk.write("{} ".format(len(i)))
+	for j in i:
+		k=Location(getLocation("Vertex",j)).getIndex()[0]
+		fvtk.write(" {}".format(k))
+	fvtk.write("\n")
+fvtk.write("\n")
+fvtk.write("CELL_TYPES %d\n"%(n))
+for i in e:
+	if(len(i)==3):
+		fvtk.write("5\n")
+	elif(len(i)==4):
+		fvtk.write("9\n")
+fvtk.write("\n")
+p=$output.vertex[].phi
+fvtk.write("POINT_DATA %d\n"%(len(p)))
+fvtk.write("SCALARS potential float 1\n")
+fvtk.write("LOOKUP_TABLE default\n")
+for i in p:
+	fvtk.write("{}\n".format(i))
+fvtk.close()
+\end

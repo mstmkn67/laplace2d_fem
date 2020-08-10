@@ -1,0 +1,60 @@
+\begin{header}
+\begin{def}
+	EngineType:string;
+	EngineVersion:string;
+	IOType:string;
+	ProjectName:string;
+	Comment:string;
+	Action:string;
+\end{def}
+
+\begin{data}
+	EngineType:"Laplace2d_fem"
+	EngineVersion:"1"
+	IOType:"INOUT"
+	ProjectName:""
+	Comment:"FEM for 2 dimensional Laplace system"
+	Action:"Laplace2d_fem.act"
+\end{data}
+\end{header}
+\begin{global_def}
+class Vector2d:{x:double[unit],y:double[unit]}[unit]
+class Vertex:{id:ID,position:Vector2d}
+class Element:{id:ID,vertex[]:<Vertex,ID>}
+input:{
+	vertex[]:Vertex
+	element[]:Element
+	region[]:{
+		name:string
+		vertex[]:<Vertex,ID>
+		type:select{"phi","q"}
+		phi:double
+		q:double
+	}
+	bicgstab:{
+		max_iteration:int
+		tolerance:double
+		pre_conditioner:select{"false","ILU"}
+	}
+	additional_information[]:{
+		item:string
+		value:string
+	}
+}
+
+output:{
+	vertex[]:{
+		phi:double
+		dphidr:Vector2d
+	}
+	time:double[s]
+	solver:{
+		iteration:int
+		tolerance:double
+	}
+	additional_information[]:{
+		item:string
+		value:string
+	}
+}
+\end{global_def}
